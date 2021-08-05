@@ -172,3 +172,13 @@ class TestTrackerStore(object):
     def initialise_dispatcher(
             self, story_name: Text) -> CollectingDispatcher:
         return CollectingDispatcher()
+
+    def initialise_all(
+            self,
+            story_name: Text,
+            use_global_config: bool = False) -> Tuple[CollectingDispatcher, TestTracker, Dict[Text, Any]]:
+
+        return (self.initialise_dispatcher(story_name),
+                self.initialise_test_tracker(story_name, use_global_config),
+                {})
+
