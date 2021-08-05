@@ -12,7 +12,7 @@ from rasa_sdk import Tracker
 from rasa_sdk.executor import CollectingDispatcher
 
 SenderId = Optional[Text]
-LatestMessage = Optional[Text]
+LatestMessage = Optional[Dict[Text, Any]]
 FollowupAction = Optional[Text]
 LatestActionName = Optional[Text]
 Paused = bool
