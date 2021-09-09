@@ -1,0 +1,17 @@
+responses:
+    utter_response_1:
+      - text: xyz Text from response 1
+    utter_response_2:
+      - buttons:
+          - payload: /affirm
+            title: xyz Yes
+          - payload: /deny
+            title: xyz No
+        text: Text from response 2
+      - channel: facebook
+        quick_replies:
+          - payload: /affirm
+            title: xyz Yes
+          - payload: /deny
+            title: xyz No
+        text: xyz Text from response 2

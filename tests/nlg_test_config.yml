@@ -1,0 +1,20 @@
+
+# Can be 'slot', 'suffix', 'last_intent_suffix' or 'none'
+CONTROLS:
+    METHOD: slot
+    NAME: test_slot
+    # SEPARATOR: '_'
+    VALUES:
+        - NAME: abc
+          FILENAME: tests/abc_responses.yml
+        - NAME: xyz
+          FILENAME: tests/xyz_responses.yml
+    REFRESH: 1 # in seconds
+
+DEFAULTS:
+    RESPONSE: 'default answer'
+    GROUP: abc
+
+NETWORK:
+    HOST: '0.0.0.0'
+    PORT: 6001
