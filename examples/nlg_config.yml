@@ -1,0 +1,22 @@
+
+# Can be 'slot', 'suffix', 'last_intent_suffix' or 'none'
+CONTROLS:
+    METHOD: slot
+    NAME: user_country
+    # separator: '_'
+    VALUES:
+        - NAME: country1
+          FILENAME: responses/response_country1.yml
+        - NAME: country2
+          FILENAME: responses/response_country2.yml
+        - NAME: country3
+          FILENAME: responses/response_country3.yml
+    REFRESH: 10 # in seconds
+
+DEFAULTS:
+    RESPONSE: 'Text for a default response, to send if the response key could not be found. May be empty (just use "") '
+    GROUP: country2
+
+NETWORK:
+    HOST: '0.0.0.0'
+    PORT: 6001
