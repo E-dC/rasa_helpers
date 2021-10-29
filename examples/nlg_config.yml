@@ -1,9 +1,9 @@
 
-# Can be 'slot', 'suffix', 'last_intent_suffix' or 'none'
+# Can be 'slot', 'entity', 'suffix', 'last_intent_suffix' or 'pooled'
 CONTROLS:
     METHOD: slot
     NAME: user_country
-    # separator: '_'
+    # SEPARATOR: '_'
     VALUES:
         - NAME: country1
           FILENAME: responses/response_country1.yml
