@@ -27,14 +27,11 @@ async def initialize_scheduler(app, loop):
     scheduler = AsyncIOScheduler({'event_loop': loop})
     scheduler.add_job(
         tick, 'interval', seconds=app.config.REFRESH)
-
     scheduler.start()
 
 @app.post("/nlg")
 async def get_response(request):
-    # print(request.json)
     res = ResponseFetcher.construct_response(app, request)
-
     return json(res)
 
 if __name__ == '__main__':
