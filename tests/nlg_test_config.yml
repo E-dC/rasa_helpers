@@ -1,5 +1,5 @@
 
-# Can be 'slot', 'suffix', 'last_intent_suffix' or 'none'
+# Can be 'slot', 'suffix', 'last_intent_suffix' or 'pooled'
 CONTROLS:
     METHOD: slot
     NAME: test_slot

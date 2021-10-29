@@ -1,7 +1,10 @@
 import os
 import random
+import collections
 import ruamel.yaml as yaml
 from sanic.log import logger
+
+POOLED_FLAG = '_pooled_'
 
 class ResponseFetcher(object):
 
@@ -13,7 +16,9 @@ class ResponseFetcher(object):
     def _find_wanted_group(cls, request, **kwargs):
         method = kwargs['METHOD']
 
-        if method == 'slot':
+        if method == 'pooled':
+            return POOLED_FLAG
+        elif method == 'slot':
             group = request['tracker']['slots'].get(kwargs['NAME'])
         else:
             s = ''
@@ -251,6 +256,10 @@ class AppUpdater(object):
                 app.config['RESPONSES'][key] = cls._load_responses_from_file(filename)
                 app.config.CONTROLS['VALUES'][idx]['TIMESTAMP'] = (latest_timestamp)
                 updated = True
+
+        if updated and app.config.CONTROLS['METHOD'] == 'pooled':
+            app.config['RESPONSES'][POOLED_FLAG] = (
+                collections.ChainMap(*list(app.config['RESPONSES'].values())))
 
         return None
 
