@@ -9,12 +9,24 @@ from pathlib import Path
 valid_req = {
     'tracker': {
         'slots': {'test_slot': 'abc'},
-        'latest_message': {'intent': {'name': 'affirm_abc'}}},
+        'latest_message': {
+            'intent': {'name': 'affirm_abc'},
+            'entities': [
+                {'entity': 'test_entity', 'value': 'abc', 'start': 0, 'end': 0}
+            ]
+        }
+    },
     'response' : 'res_abc'}
 invalid_req = {
     'tracker': {
         'slots': {'test_slot': 'abcd'},
-        'latest_message': {'intent': {'name': 'affirm_abcd'}}},
+        'latest_message': {
+            'intent': {'name': 'affirm_abcd'},
+            'entities': [
+                {'entity': 'test_entity', 'value': 'abcd', 'start': 0, 'end': 0}
+            ]
+        }
+    },
     'response' : 'res_abcd'}
 
 test_responses = {
@@ -56,6 +68,9 @@ test_responses = {
          {'METHOD': 'slot', 'NAME': 'test_slot', 'VALUES': [{'NAME': 'abc'}]},
          'abc'),
         (valid_req,
+         {'METHOD': 'entity', 'NAME': 'test_entity', 'VALUES': [{'NAME': 'abc'}]},
+         'abc'),
+        (valid_req,
          {'METHOD': 'suffix', 'SEPARATOR': '_', 'VALUES': [{'NAME': 'abc'}]},
          'abc'),
         (valid_req,
@@ -66,6 +81,9 @@ test_responses = {
          nlg.POOLED_FLAG),
         (invalid_req,
          {'METHOD': 'slot', 'NAME': 'test_slot', 'VALUES': [{'NAME': 'abc'}]},
+         None),
+        (invalid_req,
+         {'METHOD': 'entity', 'NAME': 'test_entity', 'VALUES': [{'NAME': 'abc'}]},
          None),
         (invalid_req,
          {'METHOD': 'suffix', 'SEPARATOR': '_', 'VALUES': [{'NAME': 'abc'}]},

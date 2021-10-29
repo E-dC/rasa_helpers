@@ -20,6 +20,14 @@ class ResponseFetcher(object):
             return POOLED_FLAG
         elif method == 'slot':
             group = request['tracker']['slots'].get(kwargs['NAME'])
+        elif method == 'entity':
+            entities =  request['tracker']['latest_message']['entities']
+            try:
+                group = [e['value']
+                         for e in entities
+                         if e['entity'] == kwargs['NAME']][0]
+            except IndexError:
+                group = None
         else:
             s = ''
             if method == 'suffix':
