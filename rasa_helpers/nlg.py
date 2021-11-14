@@ -52,7 +52,7 @@ class ResponseFetcher(object):
     def _fetch_group_responses(cls, app, request):
         wanted_group = cls._find_wanted_group(
             request,
-            **app.config.CONTROLS)
+            **app.config.NLG_CONTROLS)
         if wanted_group:
             return app.config.RESPONSES[wanted_group]
         else:
@@ -254,7 +254,7 @@ class AppUpdater(object):
             raise
 
         updated = False
-        for idx, value in enumerate(app.config.CONTROLS['VALUES']):
+        for idx, value in enumerate(app.config.NLG_CONTROLS['VALUES']):
             # timestamp should be 0 if loading for the first time
             key, filename, timestamp = cls._parse_entry(value)
             stale, latest_timestamp = cls._is_stale(filename, timestamp)
@@ -262,10 +262,10 @@ class AppUpdater(object):
             if stale:
                 logger.info(msg.format(key=key, filename=filename))
                 app.config['RESPONSES'][key] = cls._load_responses_from_file(filename)
-                app.config.CONTROLS['VALUES'][idx]['TIMESTAMP'] = (latest_timestamp)
+                app.config.NLG_CONTROLS['VALUES'][idx]['TIMESTAMP'] = (latest_timestamp)
                 updated = True
 
-        if updated and app.config.CONTROLS['METHOD'] == 'pooled':
+        if updated and app.config.NLG_CONTROLS['METHOD'] == 'pooled':
             app.config['RESPONSES'][POOLED_FLAG] = (
                 collections.ChainMap(*list(app.config['RESPONSES'].values())))
 
@@ -294,13 +294,13 @@ class AppUpdater(object):
 
         app.config['RESPONSES'] = {}
 
-        app.config.REFRESH = app.config.CONTROLS['REFRESH']
+        app.config.REFRESH = app.config.NLG_CONTROLS['REFRESH']
 
         app.config.DEFAULT_RESPONSE = [{'text': app.config.DEFAULTS['RESPONSE']}]
-        if len(app.config.CONTROLS['VALUES']) > 1:
+        if len(app.config.NLG_CONTROLS['VALUES']) > 1:
             app.config.DEFAULT_RESPONSE_GROUP = app.config.DEFAULTS['GROUP']
         else:
-            app.config.DEFAULT_RESPONSE_GROUP = app.config.CONTROLS['VALUES'][0]['NAME']
+            app.config.DEFAULT_RESPONSE_GROUP = app.config.NLG_CONTROLS['VALUES'][0]['NAME']
 
         app.config.HOST = app.config.NETWORK['HOST']
         app.config.PORT = app.config.NETWORK['PORT']

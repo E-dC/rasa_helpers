@@ -1,6 +1,6 @@
 
 # Can be 'slot', 'entity', 'suffix', 'last_intent_suffix' or 'pooled'
-CONTROLS:
+NLG_CONTROLS:
     METHOD: slot
     NAME: test_slot
     # SEPARATOR: '_'

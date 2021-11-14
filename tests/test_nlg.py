@@ -188,7 +188,7 @@ def test_nlg_configure(app):
     assert app.config.REFRESH == 1
     assert app.config.DEFAULT_RESPONSE == [{'text': 'default answer'}]
     assert app.config.DEFAULT_RESPONSE_GROUP == 'abc'
-    for value in app.config.CONTROLS['VALUES']:
+    for value in app.config.NLG_CONTROLS['VALUES']:
         assert value['TIMESTAMP'] == os.lstat(value['FILENAME']).st_mtime
 
     assert (
@@ -200,15 +200,15 @@ def test_nlg_configure(app):
 def test_nlg_refresh(configured_app):
     backup_path = 'backup_abc.yml'
 
-    filename = configured_app.config.CONTROLS['VALUES'][0]['FILENAME']
-    filename2 = configured_app.config.CONTROLS['VALUES'][1]['FILENAME']
+    filename = configured_app.config.NLG_CONTROLS['VALUES'][0]['FILENAME']
+    filename2 = configured_app.config.NLG_CONTROLS['VALUES'][1]['FILENAME']
 
-    original_timestamp = configured_app.config.CONTROLS['VALUES'][0]['TIMESTAMP']
+    original_timestamp = configured_app.config.NLG_CONTROLS['VALUES'][0]['TIMESTAMP']
     Path(filename).touch()
     time.sleep(0.5)
     nlg.AppUpdater.refresh(configured_app)
 
-    assert configured_app.config.CONTROLS['VALUES'][0]['TIMESTAMP'] > original_timestamp
+    assert configured_app.config.NLG_CONTROLS['VALUES'][0]['TIMESTAMP'] > original_timestamp
 
     shutil.copy(Path(filename), Path(backup_path))
     shutil.copy(Path(filename2), Path(filename))
@@ -226,7 +226,7 @@ def test_nlg_refresh(configured_app):
     # assert app.config.REFRESH == 1
     # assert app.config.DEFAULT_RESPONSE == [{'text': 'default answer'}]
     # assert app.config.DEFAULT_RESPONSE_GROUP == 'abc'
-    # for value in app.config.CONTROLS['VALUES']:
+    # for value in app.config.NLG_CONTROLS['VALUES']:
     #     assert value['TIMESTAMP'] == os.lstat(value['FILENAME']).st_mtime
     #
     # assert (
