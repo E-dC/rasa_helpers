@@ -151,13 +151,13 @@ def test_filter_wanted_responses(responses, response_key, channel, expected):
         ({'name': 'abc', 'FILENAME': 'abc_responses.yml'},
          ('abc', 'abc_responses.yml', 0))])
 def test_parse_entry_in_config(entry, expected):
-    assert nlg.AppUpdater._parse_entry(entry) == expected
+    assert nlg.NLGAppUpdater._parse_entry(entry) == expected
 
 # @pytest.mark.nlg
 # @pytest.mark.app_updater
 # def test_invalid_entry_in_config_raises_parse_value_error():
 #     with pytest.raises():
-#         nlg.AppUpdater._parse_entry(
+#         nlg.NLGAppUpdater._parse_entry(
 #             {'FILENAME': 'abc_responses.yml'})
 
 # ----- Integration tests -----
@@ -169,7 +169,7 @@ def app():
 @pytest.fixture
 def configured_app():
     app = sanic.Sanic('Test NLG server')
-    nlg.AppUpdater.configure(
+    nlg.NLGAppUpdater.configure(
         app,
         Path(
             Path(__file__).parent,
@@ -179,13 +179,13 @@ def configured_app():
 
 @pytest.mark.nlg
 def test_nlg_configure(app):
-    nlg.AppUpdater.configure(
+    nlg.NLGAppUpdater.configure(
         app,
         Path(
             Path(__file__).parent,
             'nlg_test_config.yml'))
 
-    assert app.config.REFRESH == 1
+    assert app.config.NLG_REFRESH == 1
     assert app.config.DEFAULT_RESPONSE == [{'text': 'default answer'}]
     assert app.config.DEFAULT_RESPONSE_GROUP == 'abc'
     for value in app.config.NLG_CONTROLS['VALUES']:
@@ -206,14 +206,14 @@ def test_nlg_refresh(configured_app):
     original_timestamp = configured_app.config.NLG_CONTROLS['VALUES'][0]['TIMESTAMP']
     Path(filename).touch()
     time.sleep(0.5)
-    nlg.AppUpdater.refresh(configured_app)
+    nlg.NLGAppUpdater.refresh(configured_app)
 
     assert configured_app.config.NLG_CONTROLS['VALUES'][0]['TIMESTAMP'] > original_timestamp
 
     shutil.copy(Path(filename), Path(backup_path))
     shutil.copy(Path(filename2), Path(filename))
 
-    nlg.AppUpdater.refresh(configured_app)
+    nlg.NLGAppUpdater.refresh(configured_app)
 
     shutil.move(Path(backup_path), Path(filename))
 
@@ -223,7 +223,7 @@ def test_nlg_refresh(configured_app):
 
 
 
-    # assert app.config.REFRESH == 1
+    # assert app.config.NLG_REFRESH == 1
     # assert app.config.DEFAULT_RESPONSE == [{'text': 'default answer'}]
     # assert app.config.DEFAULT_RESPONSE_GROUP == 'abc'
     # for value in app.config.NLG_CONTROLS['VALUES']:

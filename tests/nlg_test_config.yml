@@ -10,10 +10,10 @@ NLG_CONTROLS:
         - NAME: xyz
           FILENAME: tests/xyz_responses.yml
     REFRESH: 1 # in seconds
+    DEFAULTS:
+        RESPONSE: 'default answer'
+        GROUP: abc
 
-DEFAULTS:
-    RESPONSE: 'default answer'
-    GROUP: abc
 
 NETWORK:
     HOST: '0.0.0.0'
