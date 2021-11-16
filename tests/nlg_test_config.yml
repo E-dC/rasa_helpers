@@ -14,6 +14,17 @@ NLG_CONTROLS:
         RESPONSE: 'default answer'
         GROUP: abc
 
+NLU_CONTROLS:
+    MODEL_CHOOSER:
+        FILEPATH: 'tests/chooser_code.py'
+        FUNCTION: 'chooser'
+    NAME: detected_lang
+    VALUES:
+        - NAME: eng
+          FILENAME: tests/models/nlu_model-eng.tar.gz
+        - NAME: fra
+          FILENAME: tests/models/nlu_model-fra.tar.gz
+    REFRESH: 10 # in seconds
 
 NETWORK:
     HOST: '0.0.0.0'
