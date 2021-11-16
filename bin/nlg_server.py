@@ -5,7 +5,7 @@ from sanic.response import json
 from sanic.response import text
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from rasa_helpers.nlg import AppUpdater, ResponseFetcher
+from rasa_helpers.nlg import NLGAppUpdater, ResponseFetcher
 
 
 __doc__ = """Start a Natural Language Generation server for Rasa.
@@ -19,17 +19,15 @@ Optional arguments:
 
 app = Sanic("NLG server")
 
-async def tick():
-    AppUpdater.refresh(app)
+async def nlg_tick():
+    NLGAppUpdater.refresh(app)
 
-@app.listener('before_server_start')
-async def initialize_scheduler(app, loop):
+async def initialize_nlg_scheduler(app, loop):
     scheduler = AsyncIOScheduler({'event_loop': loop})
     scheduler.add_job(
-        tick, 'interval', seconds=app.config.REFRESH)
+        nlg_tick, 'interval', seconds=app.config.NLG_REFRESH)
     scheduler.start()
 
-@app.post("/nlg")
 async def get_response(request):
     res = ResponseFetcher.construct_response(app, request)
     return json(res)
@@ -37,7 +35,14 @@ async def get_response(request):
 if __name__ == '__main__':
     args = docopt(__doc__)
     config_filename = args['<config>']
-    AppUpdater.configure(app, config_filename)
+
+    nlg = True
+    if nlg:
+        NLGAppUpdater.configure(app, config_filename)
+        app.register_listener(
+            initialize_nlg_scheduler, 'before_server_start')
+        app.add_route(
+            get_response, '/nlg', frozenset({'POST'}))
 
     app.run(
         host=app.config.HOST,
