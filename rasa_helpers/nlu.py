@@ -1,6 +1,9 @@
 import os
 import sys
 import importlib
+import tarfile
+import json
+import re
 import ruamel.yaml as yaml
 import rasa.model
 import rasa.nlu.model
@@ -65,6 +68,22 @@ class NLUAppUpdater(AppUpdater):
 
         return sys.modules[module_name].__dict__[fname]
 
+    @classmethod
+    def _extract_labels_from_model(cls, filename):
+        to_detect = 'DIETClassifier.index_label_id_mapping.json'
+        with tarfile.open(filename, 'r:gz') as tar:
+            for member in tar:
+                if to_detect not in member.name:
+                    continue
+                with tar.extractfile(member.path) as f:
+                    return {v for k, v in (json.load(f)).items()}
+
+    @classmethod
+    def _find_all_model_labels(cls, app):
+        labels = set()
+        for record in app.config['NLU_CONTROLS']['VALUES']:
+            labels.update(cls._extract_labels_from_model(record['FILENAME']))
+        return labels
 
     @classmethod
     def refresh(cls, app):
@@ -85,6 +104,13 @@ class NLUAppUpdater(AppUpdater):
         """
 
         updated = cls._base_refresh(app, caller='nlu')
+        if updated:
+            default_model_label = app.config['NLU_CONTROLS']['VALUES'][0]['NAME']
+            app.config['MODELS']['unk'] = app.config['MODELS'][default_model_label]
+            app.config['NLU_LABELS'] = cls._find_all_model_labels(app)
+            l = '|'.join(app.config['NLU_LABELS'])
+            app.config['NLU_CHOOSER_BYPASSER'] = re.compile(f'/({l})')
+
         return None
 
     @classmethod
@@ -134,8 +160,18 @@ class NLURunner(object):
         return response
 
     @classmethod
+    def _bypass_nlu(cls, app, message):
+        return re.match(
+            pattern=app.config['NLU_CHOOSER_BYPASSER'],
+            string=message.strip()
+        )
+
+    @classmethod
     def run_chooser(cls, app, message):
-        o = app.config['NLU_CHOOSER'](message)
+        if cls._bypass_nlu(app, message):
+            o = ('unk', 1)
+        else:
+            o = app.config['NLU_CHOOSER'](message)
         try:
             assert o[0] in app.config.MODELS.keys()
         except AssertionError:
