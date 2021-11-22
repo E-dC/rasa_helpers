@@ -1,7 +1,6 @@
 import os
 import sys
 import importlib
-import tarfile
 import json
 import re
 import ruamel.yaml as yaml
@@ -69,20 +68,21 @@ class NLUAppUpdater(AppUpdater):
         return sys.modules[module_name].__dict__[fname]
 
     @classmethod
-    def _extract_labels_from_model(cls, filename):
-        to_detect = 'DIETClassifier.index_label_id_mapping.json'
-        with tarfile.open(filename, 'r:gz') as tar:
-            for member in tar:
-                if to_detect not in member.name:
-                    continue
-                with tar.extractfile(member.path) as f:
-                    return {v for k, v in (json.load(f)).items()}
+    def _extract_labels_from_model(cls, loaded_model):
+        for component in loaded_model.pipeline:
+            try:
+                return {v for k, v in component.index_label_id_mapping.items()}
+            except AttributeError:
+                pass
 
     @classmethod
     def _find_all_model_labels(cls, app):
         labels = set()
-        for record in app.config['NLU_CONTROLS']['VALUES']:
-            labels.update(cls._extract_labels_from_model(record['FILENAME']))
+        # This is to avoid processing the DEFAULT_VALUE_FLAG model
+        models = [app.config['MODEL'][key]
+                  for key in set(app.config['MODELS'].keys())]
+        for loaded_model in models:
+            labels.update(cls._extract_labels_from_model(loaded_model))
         return labels
 
     @classmethod
