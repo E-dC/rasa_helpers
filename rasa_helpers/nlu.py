@@ -169,12 +169,13 @@ class NLURunner(object):
             o = (DEFAULT_VALUE_FLAG, 1)
         else:
             o = app.config['NLU_CHOOSER'](message)
-        try:
-            assert o[0] in app.config.MODELS.keys()
-        except AssertionError:
-            logger.error(
-                f'{o[0]} is not in the allowable labels {app.config.MODELS.keys()}')
-            raise AssertionError
+
+            # try:
+            #     assert o[0] in app.config.MODELS.keys()
+            # except AssertionError:
+            #     logger.error(
+            #         f'{o[0]} is not in the allowable labels {app.config.MODELS.keys()}')
+            #     raise AssertionError
         return o
 
     @classmethod
