@@ -7,7 +7,7 @@ import ruamel.yaml as yaml
 import rasa.model
 import rasa.nlu.model
 from sanic.log import logger
-from .base_updater import AppUpdater
+from .base_updater import AppUpdater, DEFAULT_VALUE_FLAG
 
 class NLUAppUpdater(AppUpdater):
 
@@ -103,10 +103,8 @@ class NLUAppUpdater(AppUpdater):
                 None
         """
 
-        updated = cls._base_refresh(app, caller='nlu')
+        updated = super().refresh(app, caller='NLU')
         if updated:
-            default_model_label = app.config['NLU_CONTROLS']['VALUES'][0]['NAME']
-            app.config['MODELS']['unk'] = app.config['MODELS'][default_model_label]
             app.config['NLU_LABELS'] = cls._find_all_model_labels(app)
             l = '|'.join(app.config['NLU_LABELS'])
             app.config['NLU_CHOOSER_BYPASSER'] = re.compile(f'/({l})')
@@ -129,10 +127,9 @@ class NLUAppUpdater(AppUpdater):
                 None
 
         """
-        cls._base_configure(app, config_filename, caller='nlu')
+        super().configure(app, config_filename, caller='NLU')
 
         app.config['MODELS'] = {}
-        app.config.NLU_REFRESH = app.config.NLU_CONTROLS['REFRESH']
         app.config.NLU_CHOOSER = cls._load_chooser_code(
             app.config.NLU_CONTROLS['MODEL_CHOOSER']['FILEPATH'],
             app.config.NLU_CONTROLS['MODEL_CHOOSER']['FUNCTION']
@@ -169,7 +166,7 @@ class NLURunner(object):
     @classmethod
     def run_chooser(cls, app, message):
         if cls._bypass_nlu(app, message):
-            o = ('unk', 1)
+            o = (DEFAULT_VALUE_FLAG, 1)
         else:
             o = app.config['NLU_CHOOSER'](message)
         try:

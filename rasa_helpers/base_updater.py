@@ -1,8 +1,9 @@
-
 import os
 import collections
 import ruamel.yaml as yaml
 from sanic.log import logger
+
+DEFAULT_VALUE_FLAG = 'unk'
 
 class AppUpdater(object):
     @classmethod
@@ -71,7 +72,7 @@ class AppUpdater(object):
             '`_load_updated_data` must be implemented in child classes')
 
     @classmethod
-    def _base_refresh(cls, app, caller):
+    def refresh(cls, app, caller):
         """ Update the app responses if a newer version is available.
 
             Details:
@@ -83,14 +84,15 @@ class AppUpdater(object):
             Returns:
                 True if app was updated
         """
-        if caller == 'nlg':
+        if caller == 'NLG':
             output_key = 'RESPONSES'
             controls_key = 'NLG_CONTROLS'
             content_type = 'responses'
-        elif caller == 'nlu':
+        elif caller == 'NLU':
             output_key = 'MODELS'
             controls_key = 'NLU_CONTROLS'
             content_type = 'model'
+        default_key = f'{caller}_DEFAULT_VALUE'
 
         try:
             assert len(app.config[output_key]) == 0
@@ -114,10 +116,58 @@ class AppUpdater(object):
                 app.config[controls_key]['VALUES'][idx]['TIMESTAMP'] = (latest_timestamp)
                 updated = True
 
+        if updated:
+            app.config[output_key][DEFAULT_VALUE_FLAG] = (
+                app.config[output_key][app.config[default_key]]
+            )
+
         return updated
 
     @classmethod
-    def _base_configure(cls, app, config_filename, caller):
+    def _configure_network(cls, app, config, caller):
+
+        host = app.config.get('HOST', None)
+        port = app.config.get('PORT', None)
+        config_host = config['NETWORK']['HOST']
+        config_port = config['NETWORK']['PORT']
+
+        try:
+            if host:
+                assert host == config_host
+            if port:
+                assert port == config_port
+        except AssertionError:
+            logger.error(
+                'NLU and NLG configs have different network parameters')
+            logger.error(
+                f'HOST parameters ({host} vs {config_host}) must be identical')
+            logger.error(
+                f'PORT parameters ({port} vs {config_port}) must be identical')
+            logger.warning(
+                f'{caller} config will be used, and so HOST will be {config_host} and PORT will be {config_port}')
+            logger.warning(
+                'If you wish to have different hosts and ports, you\'ll need to start two separate apps, each with their own config.')
+            pass
+
+        app.config.HOST = config_host
+        app.config.PORT = config_port
+
+        return None
+
+    @classmethod
+    def _configure_default(cls, app, caller):
+        if len(app.config[f'{caller}_CONTROLS']['VALUES']) > 1:
+            app.config[f'{caller}_DEFAULT_VALUE'] = (
+                app.config[f'{caller}_CONTROLS']['DEFAULT_VALUE'])
+        else:
+            app.config[f'{caller}_DEFAULT_VALUE'] = (
+                app.config[f'{caller}_CONTROLS']['VALUES'][0]['NAME'])
+
+        return None
+
+
+    @classmethod
+    def configure(cls, app, config_filename, caller):
         """ Setup the app when first starting the server.
 
             Details:
@@ -135,34 +185,11 @@ class AppUpdater(object):
 
         config = cls._load_yaml(config_filename)
 
-        if caller == 'nlg':
-            app.config.update({'NLG_CONTROLS': config['NLG_CONTROLS']})
-        elif caller == 'nlu':
-            app.config.update({'NLU_CONTROLS': config['NLU_CONTROLS']})
+        assert caller in {'NLG', 'NLU'}
+        app.config.update({f'{caller}_CONTROLS': config[f'{caller}_CONTROLS']})
+        app.config[f'{caller}_REFRESH'] = app.config[f'{caller}_CONTROLS']['REFRESH']
 
-        host = app.config.get('HOST', None)
-        port = app.config.get('PORT', None)
-        config_host = config['NETWORK']['HOST']
-        config_port = config['NETWORK']['PORT']
-        try:
-            if host:
-                assert host == config_host
-            if port:
-                assert port == config_port
-        except AssertionError:
-            logger.warning(
-                'NLU and NLG configs have different network parameters')
-            logger.warning(
-                f'HOST parameters ({host} vs {config_host}) must be identical')
-            logger.warning(
-                f'PORT parameters ({port} vs {config_port}) must be identical')
-            logger.warning(
-                f'HOST will be {config_host} and PORT will be {config_port}')
-            logger.warning(
-                'If you wish to have different hosts and ports, you\'ll need to start two separate apps, each with their own config.')
-            pass
-
-        app.config.HOST = config_host
-        app.config.PORT = config_port
+        cls._configure_network(app, config, caller)
+        cls._configure_default(app, caller)
 
         return None

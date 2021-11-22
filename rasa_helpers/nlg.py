@@ -1,7 +1,7 @@
 import random
 import collections
 from sanic.log import logger
-from .base_updater import AppUpdater
+from .base_updater import AppUpdater, DEFAULT_VALUE_FLAG
 
 POOLED_FLAG = '_pooled_'
 
@@ -40,7 +40,11 @@ class ResponseFetcher(object):
             return None
 
         group = group.lower()
-        allowed_values = [k['NAME'] for k in kwargs['VALUES']]
+        allowed_values = (
+            [k['NAME'] for k in kwargs['VALUES']]
+            + [DEFAULT_VALUE_FLAG, POOLED_FLAG]
+        )
+
         if group not in allowed_values:
             logger.warning(f'Illegal NLG response group: {group}')
             return None
@@ -183,7 +187,7 @@ class NLGAppUpdater(AppUpdater):
                 None
         """
 
-        updated = cls._base_refresh(app, caller='nlg')
+        updated = super().refresh(app, caller='NLG')
 
         if updated and app.config.NLG_CONTROLS['METHOD'] == 'pooled':
             app.config['RESPONSES'][POOLED_FLAG] = (
@@ -207,22 +211,14 @@ class NLGAppUpdater(AppUpdater):
                 None
 
         """
-        cls._base_configure(app, config_filename, caller='nlg')
+        super().configure(app, config_filename, caller='NLG')
 
         app.config['RESPONSES'] = {}
 
-        app.config.NLG_REFRESH = app.config.NLG_CONTROLS['REFRESH']
-
         app.config.DEFAULT_RESPONSE = [
-            {'text': app.config.NLG_CONTROLS['DEFAULTS']['RESPONSE']}
+            {'text': app.config.NLG_CONTROLS['DEFAULT_RESPONSE']}
         ]
 
-        if len(app.config.NLG_CONTROLS['VALUES']) > 1:
-            app.config.DEFAULT_RESPONSE_GROUP = (
-                app.config.NLG_CONTROLS['DEFAULTS' ]['GROUP'])
-        else:
-            app.config.DEFAULT_RESPONSE_GROUP = (
-                app.config.NLG_CONTROLS['VALUES'][0]['NAME'])
         cls.refresh(app)
 
         return None

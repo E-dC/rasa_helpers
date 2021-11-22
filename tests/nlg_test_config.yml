@@ -10,9 +10,8 @@ NLG_CONTROLS:
         - NAME: xyz
           FILENAME: tests/xyz_responses.yml
     REFRESH: 1 # in seconds
-    DEFAULTS:
-        RESPONSE: 'default answer'
-        GROUP: abc
+    DEFAULT_RESPONSE: 'default answer'
+    DEFAULT_VALUE: abc
 
 NLU_CONTROLS:
     MODEL_CHOOSER:
@@ -25,6 +24,7 @@ NLU_CONTROLS:
         - NAME: fra
           FILENAME: tests/models/nlu_model-fra.tar.gz
     REFRESH: 10 # in seconds
+    DEFAULT_VALUE: eng
 
 NETWORK:
     HOST: '0.0.0.0'

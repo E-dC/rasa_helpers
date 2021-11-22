@@ -187,7 +187,7 @@ def test_nlg_configure(app):
 
     assert app.config.NLG_REFRESH == 1
     assert app.config.DEFAULT_RESPONSE == [{'text': 'default answer'}]
-    assert app.config.DEFAULT_RESPONSE_GROUP == 'abc'
+    assert app.config.NLG_DEFAULT_VALUE == 'abc'
     for value in app.config.NLG_CONTROLS['VALUES']:
         assert value['TIMESTAMP'] == os.lstat(value['FILENAME']).st_mtime
 
