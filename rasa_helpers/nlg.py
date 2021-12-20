@@ -8,9 +8,6 @@ POOLED_FLAG = '_pooled_'
 class ResponseFetcher(object):
 
 
-    # To test:
-    # request = {'tracker': {'slots': {'test_slot': 'abc'}, 'latest_message': {'intent': {'name': 'affirm_abc'}}}, 'response' : 'res_abc'}
-    # _find_wanted_group(request, METHOD='last_intent_suffix', SEPARATOR='_', VALUES=[{'NAME': 'abc'}, {'NAME': 'xyz'}])
     @classmethod
     def _find_wanted_group(cls, request, **kwargs):
         method = kwargs['METHOD']
@@ -63,6 +60,16 @@ class ResponseFetcher(object):
 
     @classmethod
     def _filter_wanted_responses(cls, responses, response_key, channel):
+        """ Find the possible responses for a given key and channel.
+
+            Args:
+                responses (dict): Response group
+                response_key (str): Response identifier
+                channel (str): Channel
+
+            Returns:
+                list of dict: Possible responses
+        """
 
         def try_filter(c):
             try:
@@ -87,6 +94,15 @@ class ResponseFetcher(object):
 
     @classmethod
     def construct_response(cls, app, request):
+        """ Construct a response for the incoming request.
+
+            Args:
+                app (sanic.Sanic): App containing the responses to select from
+                request (sanic.request.Request): Incoming request to process
+
+            Returns:
+                dict: A response sent back to the NLG server
+        """
 
         try:
             request = request.json
@@ -215,9 +231,17 @@ class NLGAppUpdater(AppUpdater):
 
         app.config['RESPONSES'] = {}
 
+        app.config['NLG_LABELS'] = set(
+            [k['NAME'] for k in app.config.NLG_CONTROLS['VALUES']]
+            + [DEFAULT_VALUE_FLAG, POOLED_FLAG]
+        )
+
         app.config.DEFAULT_RESPONSE = [
             {'text': app.config.NLG_CONTROLS['DEFAULT_RESPONSE']}
         ]
+
+        if 'HISTORY' not in app.config.NLG_CONTROLS.keys():
+            app.config.NLG_CONTROLS['HISTORY'] = 1
 
         cls.refresh(app)
 
