@@ -4,12 +4,41 @@ import importlib
 import json
 import re
 import ruamel.yaml as yaml
-import rasa.model
-import rasa.nlu.model
+
+import rasa
+if rasa.__version__.startswith('2.'):
+    import rasa.model
+    import rasa.nlu.model
+    RASA_MAJOR_VERSION = 2
+
+elif rasa.__version__.startswith('3.'):
+    from rasa.core.agent import Agent
+    import asyncio
+    RASA_MAJOR_VERSION = 3
+
 from sanic.log import logger
 from .base_updater import AppUpdater, DEFAULT_VALUE_FLAG
 
 class NLUAppUpdater(AppUpdater):
+
+    @classmethod
+    def _load_agent(cls, filename):
+        if RASA_MAJOR_VERSION == 2:
+            m = rasa.model.get_model(filename)
+            return rasa.nlu.model.Interpreter.load(
+                os.path.join(m, 'nlu')
+            )
+
+        elif RASA_MAJOR_VERSION == 3:
+            return Agent.load(model_path=filename)
+
+    @classmethod
+    def _build_parse_function(cls):
+        if RASA_MAJOR_VERSION == 2:
+            return lambda message: agent.parse(text=message)
+        elif RASA_MAJOR_VERSION == 3:
+            return lambda message: asyncio.run(
+                agent.parse_message(message_data=message))
 
     @classmethod
     def _load_updated_data(cls, filename):
@@ -21,10 +50,11 @@ class NLUAppUpdater(AppUpdater):
             Returns:
                 rasa.nlu.model.Interpreter loaded
         """
-        m = rasa.model.get_model(filename)
-        return rasa.nlu.model.Interpreter.load(
-            os.path.join(m, 'nlu')
-        )
+
+        agent = cls._load_agent(filename)
+        agent.predict_intent = cls._build_parse_function()
+
+        return agent
 
     @classmethod
     def _load_chooser_code(cls, filepath, fname):
@@ -69,11 +99,15 @@ class NLUAppUpdater(AppUpdater):
 
     @classmethod
     def _extract_labels_from_model(cls, loaded_model):
-        for component in loaded_model.pipeline:
-            try:
-                return {v for k, v in component.index_label_id_mapping.items()}
-            except AttributeError:
-                pass
+        if RASA_MAJOR_VERSION == 2:
+            for component in loaded_model.pipeline:
+                try:
+                    return {v for k, v
+                            in component.index_label_id_mapping.items()}
+                except AttributeError:
+                    pass
+        elif RASA_MAJOR_VERSION == 3:
+            return set(loaded_model.domain.intents)
 
     @classmethod
     def _find_all_model_labels(cls, app):
@@ -82,7 +116,8 @@ class NLUAppUpdater(AppUpdater):
         models = [app.config['MODEL'][key]
                   for key in set(app.config['MODELS'].keys())]
         for loaded_model in models:
-            labels.update(cls._extract_labels_from_model(loaded_model))
+            labels.update(
+                cls._extract_labels_from_model(loaded_model))
         return labels
 
     @classmethod
@@ -180,7 +215,7 @@ class NLURunner(object):
 
     @classmethod
     def run_intent_classification(cls, app, label, message):
-        return app.config.MODELS[label].parse(message)
+        return app.config.MODELS[label].predict_intent(message)
 
     @classmethod
     def run(cls, app, request):
