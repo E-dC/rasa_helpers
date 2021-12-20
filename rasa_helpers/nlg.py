@@ -7,56 +7,200 @@ POOLED_FLAG = '_pooled_'
 
 class ResponseFetcher(object):
 
+    @classmethod
+    def _find_events(cls, request, n, event_type):
+        """ Find latest events in a request.
+
+            Args:
+                request (dict): Incoming request to process
+                n (int): Number of events to select
+                event_type (str): Type of the events to select `action` or `user`
+        """
+        # When looking at response names, we want to grab the yet-to-be-applied
+        # event information
+        assert n > 0
+        first_event = []
+        if event_type == 'action':
+            first_event = [{'name': request['response']}]
+            n -= 1
+        return (first_event
+                + [ev for ev in reversed(request['tracker']['events'])
+                   if ev['event'] == event_type][:n])
+
+    # Extract group from event or request
+    @classmethod
+    def _extract_slot_from_request(cls, request, slot_name):
+        """Slot extractor"""
+        return request['tracker']['slots'].get(slot_name)
+
+    def default_to_none(function):
+        """ Decorator for extraction functions: return None if exception is raised"""
+        def inner(cls, *args, **kwargs):
+            try:
+                return function(cls, *args, **kwargs)
+            except:
+                return None
+        return inner
+
+    def vectorise(function):
+        """ Decorator for extraction functions: make output a list"""
+        def inner(cls, *args, **kwargs):
+            if isinstance(args[0], list):
+                events, *args = args
+                return [function(cls, e, *args, **kwargs) for e in events]
+            else:
+                return [function(cls, *args, **kwargs)]
+        return inner
 
     @classmethod
-    def _find_wanted_group(cls, request, **kwargs):
-        method = kwargs['METHOD']
+    @vectorise
+    @default_to_none
+    def _extract_entities(cls, event, entity_name):
+        """Entity extractor"""
+        return [e['value']
+                for e in event['parse_data']['entities']
+                if e['entity'] == entity_name][0]
+
+    @classmethod
+    @vectorise
+    @default_to_none
+    def _extract_suffixes(cls, event, separator):
+        """Suffix extractor"""
+        return event['name'].split(separator)[-1]
+
+    @classmethod
+    @vectorise
+    @default_to_none
+    def _extract_last_intent_suffixes(cls, event, separator):
+        """Last intent suffix extractor"""
+        return event['intent']['name'].split(separator)[-1]
+
+    @classmethod
+    def _extract_groups(cls, request, nlg_controls):
+        """ Extract group names from the request.
+
+            Details:
+                The extraction is done according to the NLG controls defined in
+                the configuration:
+                - METHOD controls the extraction method to use
+                    `entity`, `slot`, `suffix`, `last_intent_suffix` or `pooled`
+                - HISTORY controls how far to look back in time (must be 1 or more)
+                - NAME controls the entity or slot name to look for (may be None)
+                - SEPARATOR controls the separator to use when splitting response
+                names or intent names for `suffix` or `last_intent_suffix` methods
+
+            Args:
+                request (dict): Incoming request
+                nlg_controls (dict): Extraction configuration
+
+            Returns:
+                list of dict: The groups found in previous events
+        """
+
+        method = nlg_controls.pop('METHOD')
+        history = nlg_controls.pop('HISTORY')
+        entity_or_slot_name = nlg_controls.pop('NAME', None)
+        separator = nlg_controls.pop('SEPARATOR', None)
 
         if method == 'pooled':
-            return POOLED_FLAG
+            return [POOLED_FLAG]
         elif method == 'slot':
-            group = request['tracker']['slots'].get(kwargs['NAME'])
-        elif method == 'entity':
-            entities =  request['tracker']['latest_message']['entities']
-            try:
-                group = [e['value']
-                         for e in entities
-                         if e['entity'] == kwargs['NAME']][0]
-            except IndexError:
-                group = None
-        else:
-            s = ''
-            if method == 'suffix':
-                s = request['response']
-            elif method == 'last_intent_suffix':
-                s = request['tracker']['latest_message']['intent']['name']
-            group = s.split(kwargs['SEPARATOR'])[-1]
+            return [cls._extract_slot_from_request(
+                request, entity_or_slot_name)]
+
+        event_type, extract_from_events, arg = {
+            'entity': ('user', cls._extract_entities, entity_or_slot_name),
+            'last_intent_suffix': ('user', cls._extract_last_intent_suffixes, separator),
+            'suffix': ('action', cls._extract_suffixes, separator)
+        }[method]
+
+        events = cls._find_events(request, history, event_type)
+        return extract_from_events(events, arg)
+
+    @classmethod
+    def _history_fallback(cls, groups):
+        """ Find the likeliest group name in a list.
+
+            Details:
+                Assign a score to each group name in the list by counting the
+                number of times they occur, weighing the more recent names higher.
+
+            Args:
+                groups (list of str): Group names to inspect
+
+            Returns:
+                str or None: The highest scoring group
+
+        """
+        groups = [g for g in groups if g]
+        if not groups:
+            return None
+
+        n = len(groups)
+        scores = collections.Counter()
+
+        for idx, group in enumerate(groups):
+            scores[group] += 1 - (idx/n)
+        group, score = scores.most_common(1)[0]
+
+        return group
+
+    @classmethod
+    def _select_response_group(cls, groups, allowed_groups, default_group):
+        """ Find the group name likeliest to be needed to process the incoming request.
+
+            Details:
+                If the first group name in the list is valid, we pick that.
+                Otherwise, we attempt to look at the names found in older events
+                    and deduce the likeliest one.
+                If that fails, we use the default.
+
+            Args:
+                groups (list of str): Group names found by `cls._extract_groups`
+                allowed_groups (list of str): Valid group names as defined in the
+                    configuration
+                default_group (str): Default group as define in the configuration
+
+            Returns:
+                str: The chosen group
+        """
+
+        # Non allowed converted to None
+        clean_groups = [g.lower() if g in allowed_groups
+                        else None
+                        for g in groups]
+
+        group = clean_groups[0]
+        # Best effort
+        if not group:
+            group = cls._history_fallback(clean_groups)
 
         if not group:
-            logger.warning('Could not find NLG response group')
-            return None
-
-        group = group.lower()
-        allowed_values = (
-            [k['NAME'] for k in kwargs['VALUES']]
-            + [DEFAULT_VALUE_FLAG, POOLED_FLAG]
-        )
-
-        if group not in allowed_values:
-            logger.warning(f'Illegal NLG response group: {group}')
-            return None
+            logger.warning(
+                f'Could not find usable NLG response group from: {groups}')
+            return default_group
 
         return group
 
     @classmethod
     def _fetch_group_responses(cls, app, request):
-        wanted_group = cls._find_wanted_group(
-            request,
-            **app.config.NLG_CONTROLS)
-        if wanted_group:
-            return app.config.RESPONSES[wanted_group]
-        else:
-            return app.config.RESPONSES[app.config.DEFAULT_RESPONSE_GROUP]
+        """ Fetch the set of responses appropriate for the request
+
+            Args:
+                request (dict): The incoming request to the server
+                app (sanic.Sanic): Sanic app containing the responses
+
+            Returns:
+                dict: Responses for the group identified in the request
+        """
+
+        groups = cls._extract_groups(request, app.config.NLG_CONTROLS)
+        wanted_group = cls._select_response_group(
+            groups,
+            app.config.NLG_LABELS,
+            app.config.DEFAULT_RESPONSE_GROUP)
+
+        return app.config.RESPONSES[wanted_group]
 
     @classmethod
     def _filter_wanted_responses(cls, responses, response_key, channel):
