@@ -9,7 +9,7 @@ So far it consists in three separate tools, more or less polished/finished.
 * [Setup](#setup)
 * [Building story trackers for testing](#story-trackers-for-testing)
 * [Checking domain and data consistency](#checking-domain-and-data-consistency)
-* [Configurable NLG/NLU server](#configurable-nlg/nlu-server)
+* [Configurable NLG and NLU server](#configurable-nlg-and-nlu-server)
 
 
 ## General info
@@ -123,7 +123,7 @@ find_elements_missing_from_domain.py [<data-files>...] [--domain DOMAIN]
 If no arguments are given, the script will look for YAML files in `./data` and for a domain file `./domain.yml`.
 
 
-## Configurable NLG/NLU server
+## Configurable NLG and NLU server
 This is by far the most polished tool in the lot, and probably the most useful. The goal of this custom NLG and NLU server is to make it easier to work with multiple sets of responses, and multiple NLU models.
 The script name is `nlg_nlu_server.py`, until I find a better name.
 
