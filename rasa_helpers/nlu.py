@@ -113,7 +113,7 @@ class NLUAppUpdater(AppUpdater):
     def _find_all_model_labels(cls, app):
         labels = set()
         # This is to avoid processing the DEFAULT_VALUE_FLAG model
-        models = [app.config['MODEL'][key]
+        models = [app.config['MODELS'][key]
                   for key in set(app.config['MODELS'].keys())]
         for loaded_model in models:
             labels.update(
