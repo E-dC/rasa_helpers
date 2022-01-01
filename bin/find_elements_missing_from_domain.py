@@ -4,10 +4,10 @@ import os
 from typing import Dict, List, Set, Tuple, Text, Any, Optional
 
 
-__doc__ = """Build Rasa model files from Google sheets model.
+__doc__ = """Check consistency between domain and data.
 
 Usage:
-  sheets-to-rasa-v3 [<data-files>...] [--domain DOMAIN]
+  find_elements_missing_from_domain.py [<data-files>...] [--domain DOMAIN]
 
 Details:
   Find actions or intents missing from domain.
