@@ -43,7 +43,7 @@ def app():
 
 @pytest.fixture
 def configured_app():
-    app = sanic.Sanic('Test NLG server')
+    app = sanic.Sanic('Test NLG server 2')
     nlg.NLGAppUpdater.configure(
         app,
         Path(
