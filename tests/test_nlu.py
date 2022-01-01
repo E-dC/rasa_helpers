@@ -11,6 +11,7 @@ from pathlib import Path
 @pytest.fixture(scope='module')
 @pytest.mark.nlu
 @pytest.mark.slow
+@pytest.mark.models_needed
 def agent():
     if nlu.RASA_MAJOR_VERSION == 2:
         filename = 'nlu_model-fra.tar.gz'
@@ -27,6 +28,7 @@ def agent():
 
 @pytest.mark.nlu
 @pytest.mark.slow
+@pytest.mark.models_needed
 def test_model_loading(agent):
     assert hasattr(agent, 'predict_intent')
     assert callable(agent.predict_intent)
@@ -35,6 +37,7 @@ def test_model_loading(agent):
 
 @pytest.mark.nlu
 @pytest.mark.slow
+@pytest.mark.models_needed
 def test_extract_labels_from_model(agent):
     labels = nlu.NLUAppUpdater._extract_labels_from_model(agent)
 
