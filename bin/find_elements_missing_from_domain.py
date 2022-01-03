@@ -14,7 +14,6 @@ Details:
 
 Optional arguments:
   -d, --domain DOMAIN             Domain filename or directory
-                                  [default: ./domain.yml]
   -h --help                       Show this
 """
 
@@ -80,16 +79,16 @@ def report(
         domain: Dict[Text,Set[Text]],
         intents: Set[Text],
         actions: Set[Text]):
-
+    print('\n\n')
     print(make_header('Intents'))
     o = intents - domain['intents']
     if o:
-        print('In data but not in domain')
+        print('\nIn data but not in domain')
         print(o)
 
     o = domain['intents'] - intents
     if o:
-        print('In domain but not in data')
+        print('\nIn domain but not in data')
         print(o)
 
     print('\n\n')
@@ -99,21 +98,23 @@ def report(
                     .union(domain['responses']))
     o = actions - bot_actions
     if o:
-        print('In data but not in domain')
+        print('\nIn data but not in domain')
         print(o)
 
     o = bot_actions - actions
     if o:
-        print('In domain but not in data')
+        print('\nIn domain but not in data')
         print(o)
+    print('\n\n')
 
-if __name__ == '__main__':
+def main():
     args = docopt.docopt(__doc__)
 
     if not args['<data-files>']:
         args['<data-files>'] = [
             os.path.join('data', filename)
             for filename in os.listdir('./data')
+            if filename.endswith('.yml')
         ]
     print(args)
 
@@ -122,7 +123,7 @@ if __name__ == '__main__':
 
     for filepath in args['<data-files>']:
         with open(filepath, 'r') as f:
-            contents = yaml.load(f)
+            contents = yaml.safe_load(f)
 
         try:
             o = read_nlu(contents)
@@ -132,11 +133,34 @@ if __name__ == '__main__':
             intents.update(o)
             actions.update(o2)
 
-    if os.path.isfile(args['--domain']):
-        with open(args['--domain'], 'r') as f:
-            contents = yaml.load(f)
-            domain = read_domain(contents)
+    domain_path = args['--domain']
+    if not domain_path:
+        if os.path.exists('./domain.yml'):
+            domain_path = './domain.yml'
+        elif os.path.exists('./domain'):
+            domain_path = './domain'
+
+    if os.path.isfile(domain_path):
+        domain_filepaths = [domain_path]
     else:
-        raise NotImplemented
+
+        domain_filepaths = [
+            os.path.join(domain_path, filename)
+            for filename in os.listdir(domain_path)
+            if filename.endswith('.yml')
+        ]
+        print(f'Domain filepaths: {domain_filepaths}')
+        print(
+            'Beware: currently, multiple response files with different keys in them will result in inaccurate reporting')
+
+    contents = {}
+    for filepath in domain_filepaths:
+        with open(filepath, 'r') as f:
+            contents.update(yaml.safe_load(f))
+
+    domain = read_domain(contents)
 
     report(domain, intents, actions)
+
+if __name__ == '__main__':
+    main()
