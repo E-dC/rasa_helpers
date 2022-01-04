@@ -107,24 +107,36 @@ def report(
         print(o)
     print('\n\n')
 
-def main():
-    args = docopt.docopt(__doc__)
+def find_yaml_files(*paths):
+    for path in paths:
+        if not path:
+            continue
+        if not os.path.exists(path):
+            continue
+        break
+    else:
+        print(f'No valid path found: {args}')
+        raise ValueError
 
-    if not args['<data-files>']:
-        args['<data-files>'] = [
-            os.path.join('data', filename)
-            for filename in os.listdir('./data')
+    if os.path.isfile(path):
+        return [path]
+
+    return [
+            os.path.join(path, filename)
+            for filename in os.listdir(path)
             if filename.endswith('.yml')
         ]
-    print(args)
 
+def load_yaml(filepath):
+    with open(filepath, 'r') as f:
+        return yaml.safe_load(f)
+
+def build_intents_and_actions(filenames):
     intents = set()
     actions = set()
 
-    for filepath in args['<data-files>']:
-        with open(filepath, 'r') as f:
-            contents = yaml.safe_load(f)
-
+    for filepath in filenames:
+        contents = load_yaml(filepath)
         try:
             o = read_nlu(contents)
             intents.update(o)
@@ -133,32 +145,30 @@ def main():
             intents.update(o)
             actions.update(o2)
 
-    domain_path = args['--domain']
-    if not domain_path:
-        if os.path.exists('./domain.yml'):
-            domain_path = './domain.yml'
-        elif os.path.exists('./domain'):
-            domain_path = './domain'
+    return (intents, actions)
 
-    if os.path.isfile(domain_path):
-        domain_filepaths = [domain_path]
-    else:
+def build_domain(domain_files):
+    o = collections.defaultdict(dict)
+    for filepath in domain_files:
+        contents = load_yaml(filepath)
+        for k, v in contents.items():
+            o[k].update(v)
 
-        domain_filepaths = [
-            os.path.join(domain_path, filename)
-            for filename in os.listdir(domain_path)
-            if filename.endswith('.yml')
-        ]
-        print(f'Domain filepaths: {domain_filepaths}')
-        print(
-            'Beware: currently, multiple response files with different keys in them will result in inaccurate reporting')
+    return read_domain(o)
 
-    contents = {}
-    for filepath in domain_filepaths:
-        with open(filepath, 'r') as f:
-            contents.update(yaml.safe_load(f))
 
-    domain = read_domain(contents)
+def main():
+    args = docopt.docopt(__doc__)
+
+    data_files = find_yaml_files(
+        args['<data-files>'], './data')
+
+    domain_files = find_yaml_files(
+        args['--domain'], './domain.yml', './domain')
+
+    intents, actions = build_intents_and_actions(data_files)
+
+    domain = build_domain(domain_files)
 
     report(domain, intents, actions)
 
