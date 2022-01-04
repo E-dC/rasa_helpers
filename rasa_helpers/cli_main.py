@@ -23,4 +23,8 @@ def main():
         from rasa_helpers.cli_check import run
         args.pop('check')
 
+    if args['serve']:
+        from rasa_helpers.cli_serve import run
+        args.pop('serve')
+
     run(args)

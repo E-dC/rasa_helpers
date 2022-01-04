@@ -1,4 +1,3 @@
-from docopt import docopt
 from sanic import Sanic
 from sanic.log import logger
 from sanic.response import json
@@ -8,16 +7,16 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from rasa_helpers.nlg import NLGAppUpdater, ResponseFetcher
 from rasa_helpers.nlu import NLUAppUpdater, NLURunner
 
-__doc__ = """Start a NLG and/or NLU server for Rasa.
-
-Usage:
-  rasa_server.py all <config>
-  rasa_server.py nlg <config>
-  rasa_server.py nlu <config>
-
-Optional arguments:
-  -h --help                       Show this
-"""
+# __doc__ = """Start a NLG and/or NLU server for Rasa.
+#
+# Usage:
+#   rasa_server.py all <config>
+#   rasa_server.py nlg <config>
+#   rasa_server.py nlu <config>
+#
+# Optional arguments:
+#   -h --help                       Show this
+# """
 
 app = Sanic("NLG/NLU server")
 
@@ -38,9 +37,7 @@ async def parse_message(request):
     res = NLURunner.run(app, request)
     return json(res)
 
-if __name__ == '__main__':
-    args = docopt(__doc__)
-
+def run(args):
     nlg = args['all'] or args['nlg']
     nlu = args['all'] or args['nlu']
     config_filename = args['<config>']
