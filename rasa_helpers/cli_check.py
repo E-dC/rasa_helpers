@@ -1,22 +1,7 @@
 import ruamel.yaml as yaml
-import docopt
 import os
+import collections
 from typing import Dict, List, Set, Tuple, Text, Any, Optional
-
-
-__doc__ = """Check consistency between domain and data.
-
-Usage:
-  find_elements_missing_from_domain.py [<data-files>...] [--domain DOMAIN]
-
-Details:
-  Find actions or intents missing from domain.
-
-Optional arguments:
-  -d, --domain DOMAIN             Domain filename or directory
-  -h --help                       Show this
-"""
-
 
 def read_nlu(contents: Dict[Text,Any]) -> Set[Text]:
     intents = set()
@@ -148,17 +133,23 @@ def build_intents_and_actions(filenames):
     return (intents, actions)
 
 def build_domain(domain_files):
-    o = collections.defaultdict(dict)
+    o = {'intents': [],
+         'actions': [],
+         'forms': {},
+         'responses': {}}
     for filepath in domain_files:
         contents = load_yaml(filepath)
         for k, v in contents.items():
-            o[k].update(v)
+            if k in o.keys():
+                try:
+                    o[k].update(v)
+                except AttributeError:
+                    o[k].extend(v)
 
     return read_domain(o)
 
 
-def main():
-    args = docopt.docopt(__doc__)
+def run(args):
 
     data_files = find_yaml_files(
         args['<data-files>'], './data')
@@ -166,11 +157,11 @@ def main():
     domain_files = find_yaml_files(
         args['--domain'], './domain.yml', './domain')
 
+    print(f'Data file(s)  : {data_files}')
+    print(f'Domain file(s): {domain_files}')
+
     intents, actions = build_intents_and_actions(data_files)
 
     domain = build_domain(domain_files)
 
     report(domain, intents, actions)
-
-if __name__ == '__main__':
-    main()
