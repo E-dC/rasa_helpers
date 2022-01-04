@@ -42,6 +42,8 @@ def run(args):
     nlu = args['all'] or args['nlu']
     config_filename = args['<config>']
 
+    assert nlg or nlu
+
     if nlg:
         NLGAppUpdater.configure(app, config_filename)
         app.register_listener(
