@@ -22,13 +22,17 @@ You may find some or all the tools useful if you are looking to:
 ## Setup
 
 ### Dependencies
-- `rasa >= 2.8.0`
-- `ruamel.yaml >= 0.16.13`
-- `mypy-extensions >= 0.4.3`
+ - `rasa >= 2.8.0`
+ - `ruamel.yaml >= 0.16.13`
+ - `mypy-extensions >= 0.4.3`
+ - `sanic >=21.6.0, <= 21.9.3`
 
 Note about Rasa: the way models are stored changes from `2.7` to `2.8`, meaning that if you're using a version of Rasa from before `2.8`, the NLU server tool most likely won't work (see https://rasa.com/docs/rasa/2.x/migration-guide#rasa-27-to-28).  
 
-Rasa 3 _is_ supported by the NLU server tool.
+Rasa 3 _is_ supported by the NLU server tool.  
+
+Note about Sanic: the `<= 21.9.3` version limit is because of a deprecation in a Sanic update: https://github.com/RasaHQ/rasa/issues/10585
+
 
 ### Install
 
@@ -114,18 +118,19 @@ def test_action_increment_counter(tracker_store):
 ```
 
 ## Checking domain and data consistency
-`find_elements_missing_from_domain.py` is a stand-alone script, which... finds elements in the data but missing from the domain (and vice-versa)... This is to avoid beginning to train a model and realising halfway through that it crashed. This tool might not be useful any more with Rasa 3, but I haven't checked yet.
+Find elements in the data but missing from the domain (and vice-versa). This is to avoid beginning to train a model and realising halfway through that it crashed. This tool might not be useful any more with Rasa 3, but I haven't checked yet.
 
 ### Usage
-```bash
-find_elements_missing_from_domain.py [<data-files>...] [--domain DOMAIN]
 ```
-If no arguments are given, the script will look for YAML files in `./data` and for a domain file `./domain.yml`.
+rh check [<data-files>...] [--domain DOMAIN]
+```
+If `<data-files>` are not given, `rh check` will look for YAML files in `./data`.  
+If `--domain` is not given, `rh check` will look first for a domain file `./domain.yml`, and if not present, YAML files in a directory `./domain`.
 
 
 ## Configurable NLG and NLU server
 This is by far the most polished tool in the lot, and probably the most useful. The goal of this custom NLG and NLU server is to make it easier to work with multiple sets of responses, and multiple NLU models.
-The script name is `nlg_nlu_server.py`, until I find a better name.
+It can be called with the `rh serve` command.
 
 ### NLG
 
@@ -178,7 +183,7 @@ Still, you might find some advantages to using this NLG server, for example:
 #### Usage
 1. Create separate response files for each possible slot or entity value.
 2. Write a config file, using the one in the `examples` directory as a guide (more documentation coming soon).
-3. Run the server with `nlg_nlu_server.py nlg <config_path>`
+3. Run the server with `rh serve nlg <config_path>`
 
 ### NLU
 
@@ -191,7 +196,7 @@ I guess you could also use it in a monolingual bot, perhaps as a way to use seve
 1. Train separate NLU only models
 2. Implement chooser code, using `tests/chooser_code.py` as a guide (more documentation coming soon)
 3. Write a config file, using the one in the `examples` directory as a guide (more documentation coming soon).
-4. Run the server with `nlg_nlu_server.py nlu <config_path>`
+4. Run the server with `rh serve nlu <config_path>`
 
 ##### Can't I just use a slot value to choose the model?
 As far as I'm aware, no.
@@ -201,14 +206,21 @@ This means the NLU server won't have access to the slot values, the previous tur
 
 ### Use case: Multilingual bot with both NLG and NLU
 
-1. Create separate response files, one per language
-2. Train one NLU model per language, and a single Core model for all languages
-3. Implement a language identification (LI) model to predict which model to use
-4. Write a small module which
-  - loads the language identification model
-  - provides `rasa_helpers` with a function to call the model
-5. Write the config file (one config file for both NLU and NLG)
-6. Run the server `nlg_nlu_server.py all <config_path>`
+1. Add the following to your Rasa `endpoints.yml` file, replacing the port according to your preference:
+```yaml
+nlg:
+  url: "http://localhost:6001/nlg"
+nlu:
+  url: "http://localhost:6001/model/parse"
+```
+2. Create separate response files, one per language
+3. Train one NLU model per language, and a single Core model for all languages
+4. Implement a language identification (LI) model to predict which model to use
+5. Write a small module which
+    - loads the language identification model
+    - provides `rasa_helpers` with a function to call the model
+6. Write the config file (one config file for both NLU and NLG)
+7. Run the server `rh serve all <config_path>`
 
 When a message arrives to the NLU server:
 1. The language of the message is predicted
