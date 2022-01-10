@@ -14,7 +14,7 @@ from pathlib import Path
 @pytest.mark.models_needed
 def agent():
     if nlu.RASA_MAJOR_VERSION == 2:
-        filename = 'nlu_model-fra.tar.gz'
+        filename = 'nlu_model-eng.tar.gz'
     elif nlu.RASA_MAJOR_VERSION == 3:
         filename = 'nlu_model-test_rasa_3.tar.gz'
     filepath = str(
@@ -43,6 +43,18 @@ def test_extract_labels_from_model(agent):
 
     assert isinstance(labels, set)
     assert 'greet' in labels and 'goodbye' in labels
+
+
+@pytest.mark.nlu
+@pytest.mark.slow
+@pytest.mark.models_needed
+def test_predict_intent(agent):
+
+    labels = nlu.NLUAppUpdater._extract_labels_from_model(agent)
+    r = agent.predict_intent(message='Hello world!')
+    assert isinstance(r, dict)
+    assert r['intent']['name'] in labels
+
 
 
 

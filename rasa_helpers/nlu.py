@@ -33,7 +33,7 @@ class NLUAppUpdater(AppUpdater):
             return Agent.load(model_path=filename)
 
     @classmethod
-    def _build_parse_function(cls):
+    def _build_parse_function(cls, agent):
         if RASA_MAJOR_VERSION == 2:
             return lambda message: agent.parse(text=message)
         elif RASA_MAJOR_VERSION == 3:
@@ -52,7 +52,7 @@ class NLUAppUpdater(AppUpdater):
         """
 
         agent = cls._load_agent(filename)
-        agent.predict_intent = cls._build_parse_function()
+        agent.predict_intent = cls._build_parse_function(agent)
 
         return agent
 
