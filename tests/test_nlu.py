@@ -5,6 +5,7 @@ import time
 import os
 import shutil
 import inspect
+import asyncio
 from pathlib import Path
 
 
@@ -51,7 +52,7 @@ def test_extract_labels_from_model(agent):
 def test_predict_intent(agent):
 
     labels = nlu.NLUAppUpdater._extract_labels_from_model(agent)
-    r = agent.predict_intent(message='Hello world!')
+    r = asyncio.run(agent.predict_intent(message='Hello world!'))
     assert isinstance(r, dict)
     assert r['intent']['name'] in labels
 

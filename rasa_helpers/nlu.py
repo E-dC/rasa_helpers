@@ -6,15 +6,8 @@ import re
 import ruamel.yaml as yaml
 
 import rasa
-if rasa.__version__.startswith('2.'):
-    import rasa.model
-    import rasa.nlu.model
-    RASA_MAJOR_VERSION = 2
-
-elif rasa.__version__.startswith('3.'):
-    from rasa.core.agent import Agent
-    import asyncio
-    RASA_MAJOR_VERSION = 3
+from rasa.core.agent import Agent
+RASA_MAJOR_VERSION = int(rasa.__version__[0])
 
 from sanic.log import logger
 from .base_updater import AppUpdater, DEFAULT_VALUE_FLAG
@@ -22,22 +15,13 @@ from .base_updater import AppUpdater, DEFAULT_VALUE_FLAG
 class NLUAppUpdater(AppUpdater):
 
     @classmethod
-    def _load_agent(cls, filename):
-        if RASA_MAJOR_VERSION == 2:
-            m = rasa.model.get_model(filename)
-            return rasa.nlu.model.Interpreter.load(
-                os.path.join(m, 'nlu')
-            )
-
-        elif RASA_MAJOR_VERSION == 3:
-            return Agent.load(model_path=filename)
-
-    @classmethod
     def _build_parse_function(cls, agent):
         if RASA_MAJOR_VERSION == 2:
-            return lambda message: agent.parse(text=message)
+            return lambda message: agent.parse_message_using_nlu_interpreter(
+                message_data=message)
         elif RASA_MAJOR_VERSION == 3:
-            return lambda message: agent.parse_message(message_data=message)
+            return lambda message: agent.parse_message(
+                message_data=message)
 
     @classmethod
     def _load_updated_data(cls, filename):
@@ -49,8 +33,7 @@ class NLUAppUpdater(AppUpdater):
             Returns:
                 rasa.nlu.model.Interpreter loaded
         """
-
-        agent = cls._load_agent(filename)
+        agent = Agent.load(model_path=filename)
         agent.predict_intent = cls._build_parse_function(agent)
 
         return agent
@@ -99,7 +82,7 @@ class NLUAppUpdater(AppUpdater):
     @classmethod
     def _extract_labels_from_model(cls, loaded_model):
         if RASA_MAJOR_VERSION == 2:
-            for component in loaded_model.pipeline:
+            for component in loaded_model.interpreter.interpreter.pipeline:
                 try:
                     return {v for k, v
                             in component.index_label_id_mapping.items()}
@@ -181,7 +164,7 @@ class NLURunner(object):
 
     @classmethod
     async def _amend_response(cls, app, response, label, confidence):
-        #print(response)
+        logger.debug(response)
         response = await response
 
         response['entities'].append({
@@ -217,14 +200,14 @@ class NLURunner(object):
         return o
 
     @classmethod
-    async def run_intent_classification(cls, app, label, message):
+    def run_intent_classification(cls, app, label, message):
         return app.config.MODELS[label].predict_intent(message)
 
     @classmethod
-    async def run(cls, app, request):
+    def run(cls, app, request):
         message = cls._unpack_request(request)
         label, confidence = cls.run_chooser(app, message)
-        response_cl = await cls.run_intent_classification(app, label, message)
-        response = await cls._amend_response(app, response_cl, label, confidence)
+        response_cl = cls.run_intent_classification(app, label, message)
+        response = cls._amend_response(app, response_cl, label, confidence)
 
         return response
