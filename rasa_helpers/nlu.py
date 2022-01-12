@@ -37,8 +37,7 @@ class NLUAppUpdater(AppUpdater):
         if RASA_MAJOR_VERSION == 2:
             return lambda message: agent.parse(text=message)
         elif RASA_MAJOR_VERSION == 3:
-            return lambda message: asyncio.run(
-                agent.parse_message(message_data=message))
+            return lambda message: agent.parse_message(message_data=message)
 
     @classmethod
     def _load_updated_data(cls, filename):
@@ -181,7 +180,10 @@ class NLURunner(object):
         return request.json['text']
 
     @classmethod
-    def _amend_response(cls, app, response, label, confidence):
+    async def _amend_response(cls, app, response, label, confidence):
+        #print(response)
+        response = await response
+
         response['entities'].append({
             'start': 0,
             'end': 0,
@@ -189,6 +191,7 @@ class NLURunner(object):
             'entity': app.config['NLU_CONTROLS']['NAME'],
             'confidence': confidence
         })
+
         return response
 
     @classmethod
@@ -214,13 +217,14 @@ class NLURunner(object):
         return o
 
     @classmethod
-    def run_intent_classification(cls, app, label, message):
+    async def run_intent_classification(cls, app, label, message):
         return app.config.MODELS[label].predict_intent(message)
 
     @classmethod
-    def run(cls, app, request):
+    async def run(cls, app, request):
         message = cls._unpack_request(request)
         label, confidence = cls.run_chooser(app, message)
-        response = cls.run_intent_classification(app, label, message)
-        response = cls._amend_response(app, response, label, confidence)
+        response_cl = await cls.run_intent_classification(app, label, message)
+        response = await cls._amend_response(app, response_cl, label, confidence)
+
         return response
