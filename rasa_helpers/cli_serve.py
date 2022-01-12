@@ -34,7 +34,8 @@ async def get_response(request):
     return json(res)
 
 async def parse_message(request):
-    res = NLURunner.run(app, request)
+    res = await NLURunner.run(app, request)
+    print(res)
     return json(res)
 
 def run(args):
