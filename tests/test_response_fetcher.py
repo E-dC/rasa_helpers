@@ -6,15 +6,6 @@ import os
 import shutil
 from pathlib import Path
 
-
-
-
-
-
-
-
-
-
 valid_req = {
     'tracker': {
         'slots': {'test_slot': 'abc'},
@@ -184,6 +175,86 @@ def test_extract_groups(req, config, expected):
     # )
     assert nlg.ResponseFetcher._extract_groups(
         req, config) == expected
+
+
+@pytest.mark.nlg
+@pytest.mark.response_fetcher
+@pytest.mark.parametrize(
+    "req,config,expected",
+    [
+        (valid_req,
+         {
+             'NLG_CONTROLS': {
+                 'METHOD': 'slot',
+                 'NAME': 'test_slot',
+                 'VALUES': [{'NAME': 'abc'}],
+                 'HISTORY': 1},
+             'NLG_LABELS': ['abc', 'xyz'],
+             'RESPONSES': {'abc': {'res1': 'my response'}},
+             'NLG_DEFAULT_VALUE': 'xyz'
+            },
+         {'res1': 'my response'})
+        # (valid_req,
+        #  {'METHOD': 'entity',
+        #   'NAME': 'test_entity',
+        #   'VALUES': [{'NAME': 'abc'}],
+        #   'HISTORY': 1},
+        #  ['abc']),
+        # (valid_req,
+        #  {'METHOD': 'suffix',
+        #   'SEPARATOR': '_',
+        #   'VALUES': [{'NAME': 'abc'}],
+        #   'HISTORY': 1},
+        #  ['abc']),
+        # (valid_req,
+        #  {'METHOD': 'last_intent_suffix',
+        #   'SEPARATOR': '_',
+        #   'VALUES': [{'NAME': 'abc'}],
+        #   'HISTORY': 1},
+        #  ['abc']),
+        # (valid_req,
+        #  {'METHOD': 'pooled',
+        #   'VALUES': [{'NAME': 'abc'}],
+        #   'HISTORY': 1},
+        #  [nlg.POOLED_FLAG]),
+        # (invalid_req,
+        #  {'METHOD': 'slot',
+        #   'NAME': 'test_slot',
+        #   'VALUES': [{'NAME': 'abc'}],
+        #   'HISTORY': 1},
+        #  ['abcd']),
+        # (invalid_req,
+        #  {'METHOD': 'entity',
+        #   'NAME': 'test_entity',
+        #   'VALUES': [{'NAME': 'abc'}],
+        #   'HISTORY': 1},
+        #  ['abcd']),
+        # (invalid_req,
+        #  {'METHOD': 'suffix',
+        #   'SEPARATOR': '_',
+        #   'VALUES': [{'NAME': 'abc'}],
+        #   'HISTORY': 1},
+        #  ['abcd']),
+        # (invalid_req,
+        #  {'METHOD': 'last_intent_suffix',
+        #   'SEPARATOR': '_',
+        #   'VALUES': [{'NAME': 'abc'}],
+        #   'HISTORY': 1},
+        #  ['abcd'])
+    ])
+def test_fetch_group_responses(req, config, expected):
+    # allowed_groups = (
+    #     [k['NAME'] for k in config.pop('VALUES')]
+    #     + [nlg.DEFAULT_VALUE_FLAG, nlg.POOLED_FLAG]
+    # )
+    # print(app)
+    # print(app.config)
+    app = sanic.Sanic()
+    app.config.update(config)
+    assert nlg.ResponseFetcher._fetch_group_responses(
+        app, req) == expected
+
+
 
 
 @pytest.mark.nlg

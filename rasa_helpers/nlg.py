@@ -97,10 +97,10 @@ class ResponseFetcher(object):
                 list of dict: The groups found in previous events
         """
 
-        method = nlg_controls.pop('METHOD')
-        history = nlg_controls.pop('HISTORY')
-        entity_or_slot_name = nlg_controls.pop('NAME', None)
-        separator = nlg_controls.pop('SEPARATOR', None)
+        method = nlg_controls['METHOD']
+        history = nlg_controls['HISTORY']
+        entity_or_slot_name = nlg_controls.get('NAME', None)
+        separator = nlg_controls.get('SEPARATOR', None)
 
         if method == 'pooled':
             return [POOLED_FLAG]
@@ -193,12 +193,11 @@ class ResponseFetcher(object):
             Returns:
                 dict: Responses for the group identified in the request
         """
-
         groups = cls._extract_groups(request, app.config.NLG_CONTROLS)
         wanted_group = cls._select_response_group(
             groups,
             app.config.NLG_LABELS,
-            app.config.DEFAULT_RESPONSE_GROUP)
+            app.config.NLG_DEFAULT_VALUE)
 
         return app.config.RESPONSES[wanted_group]
 
