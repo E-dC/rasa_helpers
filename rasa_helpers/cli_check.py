@@ -157,7 +157,7 @@ def run(args):
         *args['<data-files>'], './data')
 
     domain_files = find_yaml_files(
-        args['--domain'], './domain.yml', './domain')
+        *args['--domain'], './domain.yml', './domain')
 
     print(f'Data file(s)  : {data_files}')
     print(f'Domain file(s): {domain_files}')

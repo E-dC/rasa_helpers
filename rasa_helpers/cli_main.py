@@ -3,7 +3,7 @@ __doc__ = """Access rasa helpers CLI tools.
 
 Usage:
   rh serve (all|nlg|nlu) <config>
-  rh check [<data-files>...] [--domain DOMAIN]
+  rh check [<data-files>...] [--domain DOMAIN]...
 
 Details:
   serve:
