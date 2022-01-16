@@ -93,24 +93,27 @@ def report(
     print('\n\n')
 
 def find_yaml_files(*paths):
+    o = []
     for path in paths:
         if not path:
             continue
         if not os.path.exists(path):
             continue
-        break
-    else:
+
+        if os.path.isfile(path):
+            o.append(path)
+        elif os.path.isdir(path):
+            [
+                os.path.join(path, filename)
+                for filename in os.listdir(path)
+                if filename.endswith('.yml')
+            ]
+
+    if not o:
         print(f'No valid path found: {args}')
         raise ValueError
 
-    if os.path.isfile(path):
-        return [path]
-
-    return [
-            os.path.join(path, filename)
-            for filename in os.listdir(path)
-            if filename.endswith('.yml')
-        ]
+    return o
 
 def load_yaml(filepath):
     with open(filepath, 'r') as f:
@@ -150,9 +153,8 @@ def build_domain(domain_files):
 
 
 def run(args):
-
     data_files = find_yaml_files(
-        args['<data-files>'], './data')
+        *args['<data-files>'], './data')
 
     domain_files = find_yaml_files(
         args['--domain'], './domain.yml', './domain')
