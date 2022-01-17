@@ -28,7 +28,6 @@ jobs:
     - name: Test with pytest rasa 3
       run: |
         pip install pytest pytest-cov
-        git clone https://github.com/Freshia/rasa_helpers.git
         cd rasa_helpers
         pip install -e .
         pytest -m 'not models_needed'
