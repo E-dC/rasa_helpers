@@ -30,9 +30,9 @@ jobs:
         pip install pytest pytest-cov
         pytest -m 'not models_needed'
         
-    - name: Test with pytest rasa 2
-      run: |
-        pip install pytest pytest-cov
-        pip install rasa==2.8
-        pytest -m 'not models_needed'
+#     - name: Test with pytest rasa 2
+#       run: |
+#         pip install pytest pytest-cov
+#         pip install rasa==2.8
+#         pytest -m 'not models_needed'
 
