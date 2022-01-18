@@ -40,9 +40,10 @@ jobs:
     - name: Test with pytest rasa 2
       if: always()
       run: |
-        pip uninstall rasa
+        # pip uninstall rasa
         echo "INSTALLING RASA. NO CACHE"
-        pip --no-cache-dir install rasa==2.8.8
+        pip --no-cache-dir install --force-reinstall rasa==2.8.8
+        echo "INSTALLED "
         #running pytest tests
         pytest -m 'not models_needed'
 
