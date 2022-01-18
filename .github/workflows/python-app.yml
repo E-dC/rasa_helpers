@@ -31,16 +31,17 @@ jobs:
         pip uninstall rasa
         echo "INSTALLING RASA. NO CACHE"
         pip --no-cache-dir install rasa==3.0.2
-        echo "DONE. CHECKING VERSION...."
-        pip show rasa
         # install rasa helpers
-        echo "STARTING HELPERS INSTALL"
+        echo "INSTALLING RASA HELPERS....."
         pip install .
+        #running pytest tests
         pytest -m 'not models_needed'
         
-#     - name: Test with pytest rasa 2
-#       run: |
-#         pip install pytest pytest-cov
-#         pip install rasa==2.8
-#         pytest -m 'not models_needed'
+    - name: Test with pytest rasa 2
+      run: |
+        pip uninstall rasa
+        echo "INSTALLING RASA. NO CACHE"
+        pip --no-cache-dir install rasa==2.8.8
+        #running pytest tests
+        pytest -m 'not models_needed'
 
