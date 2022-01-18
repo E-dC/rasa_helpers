@@ -28,8 +28,12 @@ jobs:
 
     - name: Test with pytest rasa 3
       run: |
+        echo "INSTALLING RASA"
         pip install rasa
+        echo "DONE. CHECKING VERSION"
+        pip show rasa
         # install rasa helpers
+        echo "STARTING HELPERS INSTALL"
         pip install .
         pytest -m 'not models_needed'
         
