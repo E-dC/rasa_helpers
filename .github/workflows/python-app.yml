@@ -28,7 +28,7 @@ jobs:
 
     - name: Test with pytest rasa 3
       run: |
-        pip uninstall rasa
+        pip uninstall -y rasa
         echo "INSTALLING RASA. NO CACHE"
         pip --no-cache-dir install rasa==3.0.2
         # install rasa helpers
