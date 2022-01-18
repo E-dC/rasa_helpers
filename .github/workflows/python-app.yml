@@ -38,6 +38,7 @@ jobs:
         pytest -m 'not models_needed'
         
     - name: Test with pytest rasa 2
+      if: always()
       run: |
         pip uninstall rasa
         echo "INSTALLING RASA. NO CACHE"
