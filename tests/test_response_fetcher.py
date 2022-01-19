@@ -249,7 +249,7 @@ def test_fetch_group_responses(req, config, expected):
     # )
     # print(app)
     # print(app.config)
-    app = sanic.Sanic()
+    app = sanic.Sanic('Test_app_response_fetcher'
     app.config.update(config)
     assert nlg.ResponseFetcher._fetch_group_responses(
         app, req) == expected
