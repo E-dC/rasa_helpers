@@ -1,0 +1,49 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: helpers_pytest
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: "3.8"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install pytest pytest-cov  
+
+    - name: Test with pytest rasa 3
+      run: |
+        pip uninstall -y rasa
+        echo "INSTALLING RASA. NO CACHE"
+        pip --no-cache-dir install rasa==3.0.2
+        # install rasa helpers
+        echo "INSTALLING RASA HELPERS....."
+        pip install .
+        #running pytest tests
+        pytest -m 'not models_needed'
+        
+    - name: Test with pytest rasa 2
+      if: always()
+      run: |
+        # pip uninstall rasa
+        echo "INSTALLING RASA. NO CACHE"
+        pip --no-cache-dir install --force-reinstall rasa==2.8.8
+        echo "INSTALLED "
+        #running pytest tests
+        pytest -m 'not models_needed'
+
