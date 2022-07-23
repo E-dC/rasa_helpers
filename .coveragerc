@@ -1,4 +1,0 @@
-[run]
-omit = bin/*
-    rasa_helpers/__init__.py
-    rasa_helpers/setup_logging.py
